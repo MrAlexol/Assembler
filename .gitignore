@@ -4,9 +4,10 @@
 # Unignore all with extensions
 !*.*
 
-# but ignore object files
+# but ignore object files and listfiles
 *.o
 *.obj
+*.lst
 
 # Unignore all dirs
 !*/
