@@ -12,3 +12,4 @@ run: $(TARGET)
 	./$(TARGET)
 debug: $(TARGET)
 	edb --run $(TARGET)
+

@@ -8,6 +8,8 @@
 *.o
 *.obj
 *.lst
+# and ignore backup files
+*.bak
 
 # Unignore all dirs
 !*/
@@ -16,3 +18,4 @@
 
 # Unignore Makefiles
 !Makefile*
+

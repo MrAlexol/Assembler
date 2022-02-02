@@ -6,3 +6,4 @@ all:
 clear:
 	rm -f *.o
 	ls | grep -vPi "\.|.*make.*" | xargs rm
+
