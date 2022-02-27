@@ -5,4 +5,4 @@
 
 ## Задание
 Разработать программу на языке ассемблера, вычисляющую выражение  
-$s={a-b^2\over y-a}+a^{2}-c$
+<img src="https://latex.codecogs.com/svg.latex?%5CLarge&space;s=%7Ba-b%5E2%5Cover%20y-a%7D+a%5E%7B2%7D-c" alt="$s={a-b^2\over y-a}+a^{2}-c$">

@@ -3,6 +3,8 @@
 %define READ    0
 %define WRITE   1
 
+%include "../lib64.asm"
+
 %macro write_string 2
     ; вывод
     mov     rax, WRITE      ; системная функция
@@ -26,12 +28,23 @@
     call    StrToInt64          ; вызов процедуры
     cmp     rbx, 0              ; сравнение кода возврата
     jne     StrToInt64.Error    ; обработка ошибки
-    mov     [%1], rax           ; variable = eax
+    mov     [%1], ax            ; variable = ax
 %endmacro
 
 %macro itoa 2
-    ; В регистре RAX должно находиться число для обработки, в RSI - адрес строки для вывода
-    mov     rax, [%1]           ; eax = variable
+    ; В регистре AX должно находиться число для обработки, в RSI - адрес строки для вывода
+    xor     rax, rax
+    mov     ax, [%1]            ; ax = variable
+    mov     rsi, %2
+    call    IntToStr64          ; вызов процедуры
+    cmp     rbx, 0              ; сравнение кода возврата
+    jne     StrToInt64.Error    ; обработка ошибки
+%endmacro
+
+%macro dtoa 2
+    ; В регистре EAX должно находиться число для обработки, в RSI - адрес строки для вывода
+    xor     rax, rax
+    mov     eax, [%1]           ; ax = variable
     mov     rsi, %2
     call    IntToStr64          ; вызов процедуры
     cmp     rbx, 0              ; сравнение кода возврата
@@ -48,16 +61,14 @@ strlen:
     ; Адрес строки должен находиться в RSI
     ; Результат будет в регистре RCX
     mov     rcx, -1
-    loop:
-        inc rcx
-        cmp [rsi + rcx], byte 0x0a
-        jne loop
+        loop:
+    inc rcx
+    cmp [rsi + rcx], byte 0x0a
+    jne loop
     ret
 
-%include "../lib64.asm"
-
     section .data
-ExitMsg     db      10, "Press Enter to Exit", 10
+ExitMsg     db      "Press Enter to Exit", 10
 lenExit     equ     $-ExitMsg
 StartMsg    db      "Type expression parameters", 10
 lenStart    equ     $-StartMsg
@@ -73,25 +84,34 @@ CheckMsg    db      "Incoming parameters:", 10
 lenCheck    equ     $-CheckMsg
 Semicol     db      "; "
 lenSemicol  equ     $-Semicol
+EnterMsg    db      10
+lenEnter    equ     $-EnterMsg
+ResultMsg   db      "The result is s = "
+lenResult   equ     $-ResultMsg
+Comma       db      ','
+lenComma    equ     $-Comma
 
     section .bss
 InBuf   resb    10  ; буфер ввода
 lenIn   equ     $-InBuf
 OutBuf  resb    7   ; буфер вывода
-a       resq    1
-b       resq    1
-y       resq    1
-c       resq    1
-s       resq    1
+a       resw    1
+b       resw    1
+c       resw    1
+y       resw    1
+s       resd    1
+frac    resw    1
+tmp     resw    1
+numr    resd    1
+denr    resw    1
 
     section .text
 global _start
 
 _start:
     write_string StartMsg, lenStart ; puts("Type expression parameters");
-
     write_string AInv, lenAInv ; printf("a = ");
-    read_integer InBuf, lenIn, a ; scanf("%d", a);
+    read_integer InBuf, lenIn, a ; scanf("%d", a); // чтение 2-байтового числа типа integer
 
     write_string BInv, lenBInv ; printf("b = ");
     read_integer InBuf, lenIn, b ; scanf("%d", b);
@@ -126,7 +146,63 @@ _start:
     itoa y, OutBuf
     call strlen ; rcx = strlen(OutBuf);
     write_string OutBuf, rcx ; printf("%d\n", y);
-    write_string Semicol, lenSemicol ; printf("; ");
+    write_string EnterMsg, lenEnter ; puts("");
+
+    ; numr = a - b*b;
+    mov ax, [b]     ; ax = b;
+    imul ax         ; ax *= ax;
+    mov [numr], ax
+    mov [numr+2], dx
+    movsx eax, word [a]
+    sub eax, [numr]
+    mov [numr], eax
+    xor eax, eax
+
+    ; denr = y - a;
+    mov ax, [y]     ; ax = y;
+    sub ax, [a]     ; ax -= a;
+    mov [denr], ax  ; denr = ax;
+
+    ; tmp = numr / denr;
+    mov dx, [numr+2]
+    mov ax, [numr]  ; dx:ax = numr
+    idiv word [denr]
+    mov [tmp], word 1000
+    imul dx, [tmp]  ; dx *= 1000;
+    mov [tmp], ax   ; tmp = ax;
+    mov ax, dx      ; ax = dx;
+    cwd
+    idiv word [denr]
+    mov [frac], ax  ; frac = ax;
+
+    cmp [frac], word 0
+    jge pos_frac            ; if (frac < 0)
+    add [frac], word 1000   ; frac += 1000; // если дробная часть отрицательна,
+    dec word [tmp]          ; --tmp; // вычтем ее из целого
+
+        pos_frac:
+
+    ; s = a*a - c;
+    mov ax, [a]     ; ax = a;
+    imul ax         ; ax = ax*ax;
+    sub ax, [c]     ; ax -= c;
+    mov [s+2], dx
+    mov [s], ax     ; s = (dx << 16) + ax;
+
+    ; s += tmp;
+    mov ax, [tmp]   ; ax = tmp;
+    cwd
+    add [s], eax    ; s += eax;    
+
+    write_string ResultMsg, lenResult ; printf("The result is s = ");
+    dtoa s, OutBuf
+    call strlen ; rcx = strlen(OutBuf);
+    write_string OutBuf, rcx ; printf("%d", s);
+    write_string Comma, lenComma ; printf(",");
+    itoa frac, OutBuf
+    call strlen ; rcx = strlen(OutBuf);
+    write_string OutBuf, rcx ; printf("%d", frac);
+    write_string EnterMsg, lenEnter ; puts("");
 
     ; завершение программы
     write_string ExitMsg, lenExit ; puts("Press Enter to Exit");
