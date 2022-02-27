@@ -34,7 +34,7 @@
 %macro itoa 2
     ; В регистре AX должно находиться число для обработки, в RSI - адрес строки для вывода
     xor     rax, rax
-    mov     ax, [%1]            ; ax = variable
+    movsx   eax, word [%1]      ; eax = variable
     mov     rsi, %2
     call    IntToStr64          ; вызов процедуры
     cmp     rbx, 0              ; сравнение кода возврата
@@ -110,6 +110,8 @@ global _start
 
 _start:
     write_string StartMsg, lenStart ; puts("Type expression parameters");
+
+    ; часть чтения пользовательского ввода
     write_string AInv, lenAInv ; printf("a = ");
     read_integer InBuf, lenIn, a ; scanf("%d", a); // чтение 2-байтового числа типа integer
 
@@ -121,6 +123,12 @@ _start:
 
     write_string YInv, lenYInv ; printf("y = ");
     read_integer InBuf, lenIn, y ; scanf("%d", y);
+
+    ; предыдущую часть можно заменить следующим:
+    ; mov word [a], 10
+    ; mov word [b], 3
+    ; mov word [c], 1
+    ; mov word [y], 5
 
     write_string CheckMsg, lenCheck ; printf("Incoming parameters: ");
 
@@ -175,6 +183,7 @@ _start:
     idiv word [denr]
     mov [frac], ax  ; frac = ax;
 
+    ; вычисление цифр после запятой в десятичной дроби
     cmp [frac], word 0
     jge pos_frac            ; if (frac < 0)
     add [frac], word 1000   ; frac += 1000; // если дробная часть отрицательна,
