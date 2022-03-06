@@ -56,17 +56,6 @@
     atoi %3
 %endmacro
 
-strlen:
-    ; Вычисление длины строки, оканчивающейся на 10. Enter не считается
-    ; Адрес строки должен находиться в RSI
-    ; Результат будет в регистре RCX
-    mov     rcx, -1
-        loop:
-    inc rcx
-    cmp [rsi + rcx], byte 0x0a
-    jne loop
-    ret
-
     section .data
 ExitMsg     db      "Press Enter to Exit", 10
 lenExit     equ     $-ExitMsg
@@ -99,11 +88,11 @@ a       resw    1
 b       resw    1
 c       resw    1
 y       resw    1
-s       resd    1
-frac    resw    1
-tmp     resw    1
-numr    resd    1
-denr    resw    1
+s       resd    1   ; результат вычислений
+frac    resw    1   ; дробная часть результата вычислений
+tmp     resw    1   ; временная переменная
+numr    resd    1   ; числитель дроби
+denr    resw    1   ; знаменатель дроби
 
     section .text
 global _start
@@ -134,37 +123,41 @@ _start:
 
     write_string AInv, lenAInv ; printf("a = ");
     itoa a, OutBuf
-    call strlen ; rcx = strlen(OutBuf);
+    movsx rcx, eax ; rcx = strlen(OutBuf);
+    dec rcx        ; возьмем длину строки до Enter
     write_string OutBuf, rcx ; printf("%d\n", a);
     write_string Semicol, lenSemicol ; printf("; ");
 
     write_string BInv, lenBInv ; printf("b = ");
     itoa b, OutBuf
-    call strlen ; rcx = strlen(OutBuf);
+    movsx rcx, eax ; rcx = strlen(OutBuf);
+    dec rcx
     write_string OutBuf, rcx ; printf("%d\n", b);
     write_string Semicol, lenSemicol ; printf("; ");
 
     write_string CInv, lenCInv ; printf("c = ");
     itoa c, OutBuf
-    call strlen ; rcx = strlen(OutBuf);
+    movsx rcx, eax ; rcx = strlen(OutBuf);
+    dec rcx
     write_string OutBuf, rcx ; printf("%d\n", c);
     write_string Semicol, lenSemicol ; printf("; ");
 
     write_string YInv, lenYInv ; printf("y = ");
     itoa y, OutBuf
-    call strlen ; rcx = strlen(OutBuf);
+    movsx rcx, eax ; rcx = strlen(OutBuf);
+    dec rcx
     write_string OutBuf, rcx ; printf("%d\n", y);
     write_string EnterMsg, lenEnter ; puts("");
 
     ; numr = a - b*b;
-    mov ax, [b]     ; ax = b;
-    imul ax         ; ax *= ax;
+    mov ax, [b]         ; ax = b;
+    imul ax             ; ax *= ax;
     mov [numr], ax
-    mov [numr+2], dx
-    movsx eax, word [a]
-    sub eax, [numr]
-    mov [numr], eax
-    xor eax, eax
+    mov [numr+2], dx    ; numr = dx:ax
+    movsx eax, word [a] ; eax = a;
+    sub eax, [numr]     ; eax -= numr;
+    mov [numr], eax     ; numr = eax;
+    xor eax, eax        ; eax = 0;
 
     ; denr = y - a;
     mov ax, [y]     ; ax = y;
@@ -174,13 +167,13 @@ _start:
     ; tmp = numr / denr;
     mov dx, [numr+2]
     mov ax, [numr]  ; dx:ax = numr
-    idiv word [denr]
+    idiv word [denr]; dx:ax /= denr
     mov [tmp], word 1000
     imul dx, [tmp]  ; dx *= 1000;
     mov [tmp], ax   ; tmp = ax;
     mov ax, dx      ; ax = dx;
     cwd
-    idiv word [denr]
+    idiv word [denr]; dx:ax /= denr
     mov [frac], ax  ; frac = ax;
 
     ; вычисление цифр после запятой в десятичной дроби
@@ -205,11 +198,13 @@ _start:
 
     write_string ResultMsg, lenResult ; printf("The result is s = ");
     dtoa s, OutBuf
-    call strlen ; rcx = strlen(OutBuf);
+    movsx rcx, eax ; rcx = strlen(OutBuf);
+    dec rcx
     write_string OutBuf, rcx ; printf("%d", s);
     write_string Comma, lenComma ; printf(",");
     itoa frac, OutBuf
-    call strlen ; rcx = strlen(OutBuf);
+    movsx rcx, eax ; rcx = strlen(OutBuf);
+    dec rcx
     write_string OutBuf, rcx ; printf("%d", frac);
     write_string EnterMsg, lenEnter ; puts("");
 
