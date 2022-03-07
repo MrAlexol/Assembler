@@ -96,7 +96,7 @@ CheckMsg    db      "Incoming parameters:", 10
 lenCheck    equ     $-CheckMsg
 ResultMsg   db      "The result is"
 lenResult   equ     $-ResultMsg
-SpaceMsg    db      ' '
+SpaceMsg    db      9
 lenSpace    equ     $-SpaceMsg
 EnterMsg    db      10
 lenEnter    equ     $-EnterMsg
@@ -105,14 +105,21 @@ lenEnter    equ     $-EnterMsg
 InBuf   resb    32  ; буфер ввода
 lenIn   equ     $-InBuf
 OutBuf  resb    7   ; буфер вывода
-array   resw    6   ; массив
+array   resw    24  ; массив
+row     resq    1   ; счетчик строк массива
 
     section .text
 global _start
 
 _start:
     write_string StartMsg, lenStart ; puts("Type matrix 4x6");
-    read_string InBuf, lenIn ; InBuf = gets(); // получим строку, где числа разделены пробелами
+
+    mov rcx, 0
+    ; Цикл ввода строк матрицы
+        cycleReadRows:
+    mov [row], rcx
+
+    read_string InBuf, lenIn        ; InBuf = gets(); // получим строку, где числа разделены пробелами
 
     ; Преобразование строки в одномерный массив чисел
     mov rcx, lenIn                  ; rcx = lenIn
@@ -127,25 +134,41 @@ _start:
     loop cycleTransformStr          ; }
 
     mov rsi, InBuf                  ; Адрес первого числа в большой строке известен, но его нет в стеке,
-    lea rdi, [array]                ; поэтому обработаем его отдельно.
+    mov rax, [row]                  ; поэтому обработаем его отдельно.
+    imul rax, COLNUM                ; В регистр RAX поместим количество элементов для пропуска с начала массива.
+    lea rdi, [rax * 2 + array]      ; Поместим эффективный адрес в регистр RDI.
     atoi                            ; Преобразование строки по адресу [RDI] в число типа WORD.
 
     mov rcx, COLNUM - 1             ; for (int rcx = COLNUM - 1; rcx > 0; rcx--) {
         cycleStrToArr:
     pop rsi                         ;   Берем адреса строк с числами из стека.
-    mov rax, COLNUM                 ;   Подсчитаем эффективный адрес для сохранения числа во внутреннем представлении.
-    sub rax, rcx                    ;   rax = COLNUM - rcx;
+    mov rax, [row]
+    imul rax, COLNUM
+    add rax, COLNUM                 ;   Подсчитаем эффективный адрес для сохранения числа во внутреннем представлении.
+    sub rax, rcx                    ;   В регистр RAX поместим количество элементов для пропуска с начала массива.
     lea rdi, [rax * 2 + array]      ;   Загрузим в RDI эффективный адрес для результата преобразования.
     atoi                            ;   Преобразуем.
     loop cycleStrToArr              ; }
-    
-    ; Вывод элементов массива через пробел
-    write_string CheckMsg, lenCheck ; puts("Incoming parameters:");
 
+    mov rcx, [row]
+    inc rcx
+    cmp rcx, ROWNUM
+    jl cycleReadRows
+    ; Конец ввода матрицы
+
+    write_string CheckMsg, lenCheck ; puts("Incoming parameters:");
+    mov rcx, 0
+    ; Цикл вывода строк матрицы
+        cyclePrintRows:
+    mov [row], rcx
+
+    ; Вывод элементов массива через пробел
     mov rcx, COLNUM                 ; rcx = COLNUM;
         cyclePrintArr:
-    mov rax, COLNUM                 ; Вычисление индекса
-    sub rax, rcx                    ; текущего элемента массива
+    mov rax, [row]                  ; В регистр RAX поместим количество элементов для пропуска с начала массива.
+    imul rax, COLNUM
+    add rax, COLNUM
+    sub rax, rcx
     push rcx                        ; Сохранение счетчика в стек.
     mov rsi, OutBuf                 ; Подготовка
     mov rcx, 2                      ; к вызову
@@ -157,6 +180,12 @@ _start:
     pop rcx                         ; Извлечение счетчика из стека.
     loop cyclePrintArr
     write_string EnterMsg, lenEnter
+
+    mov rcx, [row]
+    inc rcx
+    cmp rcx, ROWNUM
+    jl cyclePrintRows
+    ; Конец вывода матрицы
 
     ; Завершение программы
     write_string ExitMsg, lenExit   ; puts("Press Enter to Exit");
