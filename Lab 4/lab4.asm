@@ -3,6 +3,9 @@
 %define READ    0
 %define WRITE   1
 
+%define ROWNUM  4
+%define COLNUM  6
+
 %include "../lib64.asm"
 
 %macro write_string 2
@@ -29,16 +32,15 @@
     syscall                 ; вызов системной функции
 %endmacro
 
-%macro atoi 1
+%macro atoi 0
     ; Макрос, предназначенный для перевода строки в число
-    ; Аргументы:
-    ;   1 - Адрес числовой переменной
     ; Входные данные:
-    ;   RSI - адрес строки, завершающейся символом 10
+    ;   RSI - Адрес строки, завершающейся символом 10
+    ;   RDI - Адрес числовой переменной для вывода
     call    StrToInt64          ; вызов процедуры
     cmp     rbx, 0              ; сравнение кода возврата
     jne     StrToInt64.Error    ; обработка ошибки
-    mov     [%1], ax            ; variable = ax
+    mov     [rdi], ax           ; [rdi] = ax
 %endmacro
 
 %macro read_integer 3
@@ -48,7 +50,8 @@
     ;   2 - Длина буфера ввода
     ;   3 - Переменная для записи результата преобразований - числа.
     read_string %1, %2 ; scanf("%s", %1);
-    atoi %3
+    mov rdi, %3
+    atoi
 %endmacro
 
 numToString:
@@ -87,31 +90,77 @@ numToString:
     section .data
 ExitMsg     db      "Press Enter to Exit", 10
 lenExit     equ     $-ExitMsg
-StartMsg    db      "Type matrix", 10
+StartMsg    db      "Type matrix 4x6", 10
 lenStart    equ     $-StartMsg
-
 CheckMsg    db      "Incoming parameters:", 10
 lenCheck    equ     $-CheckMsg
-
 ResultMsg   db      "The result is"
 lenResult   equ     $-ResultMsg
+SpaceMsg    db      ' '
+lenSpace    equ     $-SpaceMsg
+EnterMsg    db      10
+lenEnter    equ     $-EnterMsg
 
     section .bss
-InBuf   resb    64  ; буфер ввода
+InBuf   resb    32  ; буфер ввода
 lenIn   equ     $-InBuf
 OutBuf  resb    7   ; буфер вывода
+array   resw    6   ; массив
 
     section .text
 global _start
 
 _start:
-    write_string StartMsg, lenStart ; puts("Type matrix");
+    write_string StartMsg, lenStart ; puts("Type matrix 4x6");
+    read_string InBuf, lenIn ; InBuf = gets(); // получим строку, где числа разделены пробелами
 
+    ; Преобразование строки в одномерный массив чисел
+    mov rcx, lenIn                  ; rcx = lenIn
+        cycleTransformStr:          ; for (int rcx = lenIn; rcx > 0; rcx--) {
+    cmp byte [InBuf + rcx - 1], 32  ;   if (InBuf + rcx - 1 == ' ') { // заменим все пробелы на Enter
+    jne skipCycleTransformStr
+    mov byte [InBuf + rcx - 1], 10  ;   *(InBuf + rcx - 1) = '\n';
+    mov rsi, InBuf
+    add rsi, rcx                    ;   Сохраним все адреса замененных пробелов (т.е. адреса строк с числами)
+    push rsi                        ;   в стек, чтобы затем по очереди их извлечь и найти числа для преобразования.
+        skipCycleTransformStr:      ;   }
+    loop cycleTransformStr          ; }
+
+    mov rsi, InBuf                  ; Адрес первого числа в большой строке известен, но его нет в стеке,
+    lea rdi, [array]                ; поэтому обработаем его отдельно.
+    atoi                            ; Преобразование строки по адресу [RDI] в число типа WORD.
+
+    mov rcx, COLNUM - 1             ; for (int rcx = COLNUM - 1; rcx > 0; rcx--) {
+        cycleStrToArr:
+    pop rsi                         ;   Берем адреса строк с числами из стека.
+    mov rax, COLNUM                 ;   Подсчитаем эффективный адрес для сохранения числа во внутреннем представлении.
+    sub rax, rcx                    ;   rax = COLNUM - rcx;
+    lea rdi, [rax * 2 + array]      ;   Загрузим в RDI эффективный адрес для результата преобразования.
+    atoi                            ;   Преобразуем.
+    loop cycleStrToArr              ; }
+    
+    ; Вывод элементов массива через пробел
     write_string CheckMsg, lenCheck ; puts("Incoming parameters:");
 
+    mov rcx, COLNUM                 ; rcx = COLNUM;
+        cyclePrintArr:
+    mov rax, COLNUM                 ; Вычисление индекса
+    sub rax, rcx                    ; текущего элемента массива
+    push rcx                        ; Сохранение счетчика в стек.
+    mov rsi, OutBuf                 ; Подготовка
+    mov rcx, 2                      ; к вызову
+    lea rdi, [rax * 2 + array]      ; процедуры
+    call numToString                ; numToString.
+    dec rcx
+    write_string OutBuf, rcx        ; printf("%d ", d);
+    write_string SpaceMsg, lenSpace
+    pop rcx                         ; Извлечение счетчика из стека.
+    loop cyclePrintArr
+    write_string EnterMsg, lenEnter
+
     ; Завершение программы
-    write_string ExitMsg, lenExit ; puts("Press Enter to Exit");
-    read_string InBuf, lenIn ; gets();
-    mov     rax, 60         ; системная функция 60 (exit)
-    xor     rdi, rdi        ; return code 0    
-    syscall                 ; вызов системной функции
+    write_string ExitMsg, lenExit   ; puts("Press Enter to Exit");
+    read_string InBuf, lenIn        ; gets();
+    mov     rax, 60                 ; системная функция 60 (exit)
+    xor     rdi, rdi                ; return code 0    
+    syscall                         ; вызов системной функции
