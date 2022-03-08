@@ -252,14 +252,14 @@ _start:
 
     mov rcx, 0                      ;   rcx = 0;
     mov ax, 0                       ;   ax = 0;
-        cycleRow:                   ;   for (int col = 0; col < COLNUM; rcx++) {
+        cycleRow:                   ;   for (int col = 0; col < COLNUM; col++) {
     push rcx
     mov rcx, [rsp + 8]              ;       rcx = row;
     imul rcx, COLNUM                ;       rcx *= COLNUM;
     add rcx, [rsp]                  ;       rcx += col; // rcx - кол-во элементов для пропуска в одномерном массиве
     cmp WORD [array + rcx * 2], 0   ;       if (array[row][col] < 0)
     jge skipElement
-    add ax, [array + rcx * 2]       ;           ax += array[rcx];
+    add ax, [array + rcx * 2]       ;           ax += array[row][col]; // или array[rcx], если читать матрицу построчно
         skipElement:
     pop rcx
     inc rcx
@@ -267,7 +267,7 @@ _start:
     jl cycleRow                     ;   }
     mov rcx, [rsp]                  ;   rcx = row;
     imul rcx, COLNUM                ;   rcx *= COLNUM;
-    mov [array + rcx * 2], ax       ;   array[row][0] = ax;
+    mov [array + rcx * 2], ax       ;   array[row][0] = ax; // или array[rcx], если читать матрицу построчно
 
     pop rcx
     inc rcx
