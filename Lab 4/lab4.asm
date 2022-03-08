@@ -100,22 +100,27 @@ printMatrix:
     shl rax, 1                      ; rax *= 2; // смещение в байтах относительно начала массива
     push rcx                        ; Сохранение счетчика в стек.
     push 0                          ; char str[8] = {0}; // Объявление локальной переменной
-    mov rsi, rsp                    ; Подготовка
-    mov rcx, 2                      ; к
-    mov rdi, [rbp + 16]             ; вызову
-    add rdi, rax                    ; процедуры
-    call numToString                ; numToString.
+    mov rsi, rsp                    ; Подготовка к вызову процедуры numToString.
+    mov rcx, 2                      ; rcx = 2; // тип данных - word
+    mov rdi, [rbp + 16]             ; rdi = arg0 + rax;
+    add rdi, rax                    ; rsi = str;
+    call numToString
+    ; print(str, strlen(str));
     dec rcx                         ; rcx--; // rcx содержит длину строки с Enter на конце
     mov rax, rsp                    ; rax = rsp;
     push rcx                        ; arg1 = rcx;
     push rax                        ; arg0 = rax;
     call print                      ; print(arg0, arg1);
+    ; print('\t', 1);
     push lenSpace                   ; arg1 = 1;
     push SpaceMsg                   ; arg0 = '\t';
     call print                      ; print(arg0, arg1);
+
     add rsp, 8                      ; Забудем переменную str
     pop rcx                         ; Извлечение счетчика из стека.
     loop cyclePrintArr
+
+    ; puts();
     push lenEnter                   ; arg1 = 1;
     push EnterMsg                   ; arg0 = '\n';
     call print                      ; print(arg0, arg1);
@@ -181,7 +186,7 @@ readMatrix:
     mov rax, [rbp - 8]              ;   rax = row;
     imul rax, [rbp + 32]            ;   rax *= arg2;
     add rax, [rbp + 32]             ;   rax += arg2;
-    sub rax, rcx                    ;   rax -= rax; // В регистр RAX поместим количество элементов для пропуска с начала массива.
+    sub rax, rcx                    ;   rax -= rcx; // В регистр RAX поместим количество элементов для пропуска с начала массива.
     shl rax, 1                      ;   rax *= 2;
     mov rdi, [rbp + 16]             ;   rdi = arg0;
     add rdi, rax                    ;   rdi += rax; // Загрузим в RDI эффективный адрес для результата преобразования.
@@ -241,9 +246,38 @@ _start:
     push array                      ; arg0 = array;
     call printMatrix                ; printMatrix(arg0, arg1, arg2);
 
+    mov rcx, 0
+        cycleMatrix:                ; for (int row = 0; row < ROWNUM; row++) {
+    push rcx
+
+    mov rcx, 0                      ;   rcx = 0;
+    mov ax, 0                       ;   ax = 0;
+        cycleRow:                   ;   for (int col = 0; col < COLNUM; rcx++) {
+    push rcx
+    mov rcx, [rsp + 8]              ;       rcx = row;
+    imul rcx, COLNUM                ;       rcx *= COLNUM;
+    add rcx, [rsp]                  ;       rcx += col; // rcx - кол-во элементов для пропуска в одномерном массиве
+    cmp WORD [array + rcx * 2], 0   ;       if (array[row][col] < 0)
+    jge skipElement
+    add ax, [array + rcx * 2]       ;           ax += array[rcx];
+        skipElement:
+    pop rcx
+    inc rcx
+    cmp rcx, COLNUM
+    jl cycleRow                     ;   }
+    mov rcx, [rsp]                  ;   rcx = row;
+    imul rcx, COLNUM                ;   rcx *= COLNUM;
+    mov [array + rcx * 2], ax       ;   array[row][0] = ax;
+
+    pop rcx
+    inc rcx
+    cmp rcx, ROWNUM
+    jl cycleMatrix                  ; }
+
     push lenResult
     push ResultMsg
     call print                      ; puts("The result is");
+
     push QWORD COLNUM               ; arg2 = COLNUM;
     push QWORD ROWNUM               ; arg1 = ROWNUM;
     push array                      ; arg0 = array;
