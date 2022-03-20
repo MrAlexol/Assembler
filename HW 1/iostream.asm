@@ -64,7 +64,7 @@ strlen:
 
     mov     rax, MAX_STRING_LENGTH
     sub     rax, rcx
-    dec     rax              ; вычисление длины строки по значению rcx
+    dec     rax             ; вычисление длины строки по значению rcx
 
     pop     rbp
     ret     8

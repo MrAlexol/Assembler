@@ -114,29 +114,27 @@ inspectString:              ; arg0 - адрес строки с \0 на конц
     pop rcx
 
     xor rbx, rbx
-    mov bx, [rbp - 68]
-    sub bx, cx
-    pop WORD [rbp + rbx*2 - 66]
-    pop ax
-    add [rbp - 2], ax
+    mov bx, [rbp - 68]      ; bx = wordsCount;
+    sub bx, cx              ; bx -= cx;
+    pop WORD [rbp + rbx*2 - 66] ; запись в bx-й элемент массива кол-ва согласных в слове
+    pop ax                  ; получение кол-ва гласных в данном слове
+    add [rbp - 2], ax       ; суммирование кол-ва гласных во воем тексте
 
     loop .cycle_words
 
-    ; [rbp - 66] - массив с кол-вом согласных
-    ; [rbp - 2] - общее кол-во гласных
-
     push TotalVowelsMsg
-    call CPrint
+    call CPrint             ; printf("Total vowels: ");
 
     mov ax, [rbp - 2]
     push WORD 2
-    call printNum
+    call printNum           ; printf("%d", totalVowels);
 
-    push ConsInWordsMsg
+    push ConsInWordsMsg     ; puts("Consonants in words:");
     call CPrint
 
     xor rcx, rcx
 .cycle_output:
+    ; [rbx + [rbp - 68 - (rcx+1)*2]] // расчет адреса слова
     mov rbx, [rbp + 16]     ; rbx = str;
     mov rdx, rcx
     push rcx
@@ -147,12 +145,13 @@ inspectString:              ; arg0 - адрес строки с \0 на конц
     sub rdx, 68             ; rdx = rbp - 68 - rdx;
     xor rax, rax
     mov ax, [rdx]
-    add rbx, rax
+    add rbx, rax            ; rbx - указатель на начало слова в предложении
+
     push rbx
-    call CPrint
+    call CPrint             ; напечатать очередное слово из предложения
 
     push DelimMsg
-    call CPrint
+    call CPrint             ; printf(" - ");
     pop rcx
 
     lea rbx, [rbp - 66]
@@ -161,7 +160,7 @@ inspectString:              ; arg0 - адрес строки с \0 на конц
 
     push rcx
     push WORD 2
-    call printNum
+    call printNum           ; printf("%d", consonants[cx]);
 
     pop rcx
     inc cx
