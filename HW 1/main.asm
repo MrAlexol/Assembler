@@ -11,6 +11,9 @@ Consonants      db  "bcdfghjklmnpqrstvwxzBCDFGHJKLMNPQRSTVWXZ" ; согласн�
 Cons_count      equ $-Consonants
 Vowels          db  "aeoiuyAEOIUY" ; гласные
 Vows_count      equ $-Vowels
+TotalVowelsMsg  db  "Total vowels: ", 0
+ConsInWordsMsg  db  "Consonants in words:", 10, 0
+DelimMsg        db  " - ", 0
 
     section .bss            ; сегмент неинициализированных переменных
 
@@ -121,6 +124,49 @@ inspectString:              ; arg0 - адрес строки с \0 на конц
 
     ; [rbp - 66] - массив с кол-вом согласных
     ; [rbp - 2] - общее кол-во гласных
+
+    push TotalVowelsMsg
+    call CPrint
+
+    mov ax, [rbp - 2]
+    push WORD 2
+    call printNum
+
+    push ConsInWordsMsg
+    call CPrint
+
+    xor rcx, rcx
+.cycle_output:
+    mov rbx, [rbp + 16]     ; rbx = str;
+    mov rdx, rcx
+    push rcx
+    inc rdx
+    shl rdx, 1              ; rdx = (rcx + 1)*2;
+    sub rdx, rbp
+    neg rdx
+    sub rdx, 68             ; rdx = rbp - 68 - rdx;
+    xor rax, rax
+    mov ax, [rdx]
+    add rbx, rax
+    push rbx
+    call CPrint
+
+    push DelimMsg
+    call CPrint
+    pop rcx
+
+    lea rbx, [rbp - 66]
+    xor rax, rax
+    mov ax, [rbx + rcx*2]   ; int wordInd << words; // берем начиная с нижнего индекса
+
+    push rcx
+    push WORD 2
+    call printNum
+
+    pop rcx
+    inc cx
+    cmp cx, [rbp - 68]
+    jl .cycle_output
 
     mov rax, 0              ; поместим код возврата в rax   
     mov rsp, rbp            ; эпилог

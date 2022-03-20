@@ -1,3 +1,5 @@
+%include "../lib64.asm"
+
     section .text
 readLn:
     ; // Пример вызова по C: readLn(char* strIn, uint16_t count);
@@ -27,6 +29,25 @@ print:
     pop     rbp
     ret     10
 
+putc:
+    ; // Пример вызова по C: putc();
+    ; // В al ожидается код символа для вывода
+    push    rbp
+    mov     rbp, rsp
+
+    sub     rsp, 2
+    mov     [rbp - 2], al
+
+    mov     rax, 1          ; системная функция WRITE
+    mov     rdi, 1          ; дескриптор файла STDOUT
+    lea     rsi, [rbp - 2]  ; адрес выводимой строки
+    mov     dx, 1           ; длина строки
+    syscall                 ; вызов системной функции
+
+    mov     rsp, rbp
+    pop     rbp
+    ret
+
 %define MAX_STRING_LENGTH 256
 
 strlen:
@@ -41,12 +62,12 @@ strlen:
     mov     rcx, MAX_STRING_LENGTH
     repnz   scasb           ; поиск \0 - символа конца строки
 
-    mov     ax, MAX_STRING_LENGTH
-    sub     ax, cx
-    dec     ax              ; вычисление длины строки по значению rcx
+    mov     rax, MAX_STRING_LENGTH
+    sub     rax, rcx
+    dec     rax              ; вычисление длины строки по значению rcx
 
-    pop rbp
-    ret 8
+    pop     rbp
+    ret     8
 
 CPrint:
     ; // Пример вызова по C: CPrint(char* strOut); // strOut - строка, оканчивающаяся на 0
@@ -56,13 +77,13 @@ CPrint:
     mov     rsi, [rbp + 16] ; адрес выводимой строки
     push    rsi
     call    strlen
-    mov     dx, ax
+    mov     rdx, rax
     mov     rax, 1          ; системная функция WRITE
     mov     rdi, 1          ; дескриптор файла STDOUT
     syscall                 ; вызов системной функции
 
-    pop rbp
-    ret 8
+    pop     rbp
+    ret     8
 
 CStylizeString:
     ; Процедура заменяет самый правый пробел или enter в строке на \0
@@ -107,3 +128,43 @@ CStylizeString:
 .exit:
     pop     rbp
     ret     10
+
+printNum:
+    ; // Пример вызова по C: printNum(short valType); // в eax/ax/al ожидается число
+    ; // valType - 1, 2 или 4 байта
+    push    rbp
+    mov     rbp, rsp
+
+    mov     cx, [rbp + 16]
+
+    cmp     cx, 1               ; switch (cx) {
+    je      .type_byte          ; case 1: goto type_byte;
+    cmp     cx, 2
+    je      .type_word          ; case 2: goto type_word;
+    cmp     cx, 4
+    je      .type_dword         ; case 4: goto type_dword;
+    jmp     StrToInt64.Error    ; default: return;
+
+.type_byte:
+    cbw
+.type_word:
+    cwde
+.type_dword:
+
+    push    QWORD 0
+    lea     rsi, [rbp - 8]
+
+    xor     rbx, rbx
+    call    IntToStr64          ; вызов процедуры
+    cmp     rbx, 0              ; сравнение кода возврата
+    jne     StrToInt64.Error    ; обработка ошибки
+    
+    
+    push    ax
+    lea     rax, [rbp - 8]
+    push    rax
+    call    print
+
+    mov     rsp, rbp
+    pop     rbp
+    ret     2
