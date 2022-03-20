@@ -94,12 +94,16 @@ CStylizeString:
     
     jmp     short .give_result
 
+.space_not_found:
+    mov     rax, 1          ; code enter or space not found
+    jmp     short .exit
+
 .give_result:
     inc     rdi
-.space_not_found:
     mov     al, 0
     mov     [rdi], al
+    mov     rax, 0          ; code ok
 
-    mov     rax, 0
+.exit:
     pop     rbp
     ret     10
