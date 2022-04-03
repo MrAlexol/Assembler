@@ -101,6 +101,8 @@ EnterMsg    db      10
 lenEnter    equ     $-EnterMsg
 ResultMsg   db      "The result is f = "
 lenResult   equ     $-ResultMsg
+ErrZeroMsg  db      "Error! Division by 0 is prohibited!", 10
+lenErrZer   equ     $-ErrZeroMsg
 Comma       db      ','
 lenComma    equ     $-Comma
 
@@ -126,6 +128,9 @@ _start:
 
     write_string DInv, lenDInv ; printf("d = ");
     read_integer InBuf, lenIn, d ; scanf("%d", &d); // чтение 2-байтового числа типа integer
+
+    cmp word [d], 5
+    je error_div_zero
 
     ; Вместо ввода в терминал можно использовать значения, указанные непосредственно в программе:
     ; mov word [q], 5
@@ -181,6 +186,12 @@ _start:
     mov rdi, result     ; адрес числа для перевода в строку
     call numToString
     write_string OutBuf, rcx ; вывод строки
+
+    jmp no_error
+        error_div_zero:                ; if (d == 5)
+    write_string ErrZeroMsg, lenErrZer ;    printf("Error! Division by 0 is prohibited!");
+     
+        no_error:
 
     ; Завершение программы
     write_string ExitMsg, lenExit ; puts("Press Enter to Exit");
