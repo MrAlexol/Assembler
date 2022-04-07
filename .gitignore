@@ -19,3 +19,8 @@
 # Unignore Makefiles
 !Makefile*
 
+# Ignore all builds
+**/*build*/
+
+# Ignore user files
+**/*.user
