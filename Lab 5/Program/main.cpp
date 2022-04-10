@@ -13,20 +13,22 @@ int main(int argc, char *argv[])
 
     char input[stringSize];
     char* nests[maxNests];
-    char result[maxNests*stringSize];
+    char result[maxNests*stringSize] = {0};
 
     for (int i = 0; i < maxNests; i++) {
         nests[i] = result + i * stringSize;
     }
 
     //fgets(input, stringSize, stdin);
-    strcpy(input, "1234 1235 1335 1233\n");
+    strcpy(input, "12 12 13\n");
 
-    //input[strlen(input)-1] = 0;
+    input[strlen(input)-1] = 0;
 
     printf("Your string: '%s'\n", input);
 
     cmpwords(input, nests);
+
+    printf("Result:\n%s\n", result);
 
     return 0;
 }
