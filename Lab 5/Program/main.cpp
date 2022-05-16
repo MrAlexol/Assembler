@@ -15,16 +15,20 @@ int main()
     char answer[maxNests][stringSize];
 
     //fgets(input, stringSize, stdin);
-    strcpy(input, "12 12 13\n");
+    strcpy(input, "proza pruza pruzo proz rproza ");
 
-    input[strlen(input)-1] = 0;
+    //input[strlen(input)-1] = 0;
 
     printf("Your string: '%s'\n", input);
 
     cmpwords(input, answer);
 
-    printf("Result:\n%s\n", answer);
-
+    puts("Result:");
+    int nestNo = 0;
+    while (answer[nestNo][0] != '\0') {
+        printf("%s\n", answer[nestNo]);
+        nestNo++;
+    }
     return 0;
 }
 
