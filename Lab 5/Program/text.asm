@@ -4,7 +4,7 @@
     extern _Z6outputiPc
 
     section .data
-str: db "ruka roka rooa roza ruza ", 0
+str: db "ruka ruska rua ruka rusk ruk ua ra ", 0 ; ruka ruska rua ruka rusk ruk ua ra 
 
     section .bss
 result resb 256*16
@@ -105,9 +105,12 @@ _Z8cmpwordsPcPS_:
     ;pop rcx
     mov [rbp - 24], eax
 
-    cmp [rbp - 20], eax
-    je .len1_eq_len2
-    add edi, [rbp - 24]     ; заглушка
+    sub eax, [rbp - 20]     ; len2 V len1
+    je .len1_eq_len2        ; len2 равно len1
+    cmp eax, -1
+    je .len1_lt_len2        ; len2 + 1 = len1
+    
+    add edi, [rbp - 24]     ; разница в длине больше 1
     jmp .int_loop
 
 .len1_eq_len2:
@@ -116,19 +119,19 @@ _Z8cmpwordsPcPS_:
     mov ecx, [rbp - 24]
     mov rsi, [rbp - 32]
     repe cmpsb
-    jecxz .len1_eq_len2_add_word
+    jecxz .add_word
     
     ; пропустить по 1 букве в словах
 
     ; сравнение до конца слова или до несовпадения
     repe cmpsb
     ; предыдущие буквы одинаковые?
-    je .len1_eq_len2_add_word
+    je .add_word
     mov rdi, [rbp - 40]
     add edi, [rbp - 24]         ; пропуск неподошедшего слова
     jmp .int_loop
 
-.len1_eq_len2_add_word:
+.add_word:
     ; добавить сравниваемое слово
     mov rdi, [rbp - 16]
     add edi, [rbp - 44]
@@ -141,6 +144,29 @@ _Z8cmpwordsPcPS_:
     inc eax
     add [rbp - 44], eax
     mov rdi, rsi
+    jmp .int_loop
+
+.len1_lt_len2:
+
+    ; сравнение не более len2 раз или до несовпадения
+    xor rcx, rcx
+    mov ecx, [rbp - 24]
+    mov rsi, [rbp - 32]
+    repe cmpsb
+
+    je .add_word
+
+    ; вернуться на 1 букву в сравниваемом слове
+    dec rdi
+    inc rcx
+
+    ; сравнение до конца слова или до несовпадения
+    repe cmpsb
+    ; предыдущие буквы одинаковые?
+    je .add_word
+
+    mov rdi, [rbp - 40]
+    add edi, [rbp - 24]         ; пропуск неподошедшего слова
     jmp .int_loop
 
 .end_of_proc:
