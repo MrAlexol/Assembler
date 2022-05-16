@@ -4,10 +4,10 @@
     extern _Z6outputiPc
 
     section .data
-Fgg db "rosa rsa ros bark  brosab roza rqqghhrosaqq osa rusa fjksd bjv rosa", 0
+str: db "ruka roka rooa roza ruza ", 0
 
     section .bss
-result resb 256
+result resb 256*16
 
     section .text
     global _start
@@ -15,245 +15,134 @@ _start:
 
 _Z8cmpwordsPcPS_:
     ; locals:
-    ;   wordPtr - [rbp - 48] // qword указатель на место, где остановилось сравнивание слов, в текущем слове
-    ;   wordStart - [rbp - 40] // qword начало слова для сравнения
-    ;   result - [rbp - 32] // qword результат
-    ;   nestWord - [rbp - 24] // qword указатель на исходное слово, формирующее гнездо
-    ;   input - [rbp - 16] // qword указатель на введенную строку
-    ;   nests - [rbp - 8] // word количество найденных гнезд
-    ;   charPos - [rbp - 6] // word определяет номер символа, на который оканчивается слово, формирующее гнездо (обратная нумерация)
-    ;   writePos - [rbp - 4] // word определяет номер символа для записи в строке одного гнезда
-    ;   inLen - [rbp - 2] // word длина исходного слова
+    ; [rbp - 8] - str       qword   char[]
+    ; [rbp - 16] - result   qword   char[]
+    ; [rbp - 20] - len1     dword   int
+    ; [rbp - 24] - len2     dword   int
+    ; [rbp - 32] - ptr1     qword   char*
+    ; [rbp - 40] - ptr2     qword   char*
+    ; [rbp - 44] - len      dword   int
+    ; [rbp - 48] - num      dword   int
 
     push rbp
     mov rbp, rsp
 
-    sub rsp, 56
-    ;mov [rbp - 16], rdi     ; input (local var)
-    ;mov [rbp - 32], rsi     ; result (local var)
-
-    mov qword [rbp - 16], Fgg
-    mov qword [rbp - 32], result 
+    push str
+    push result
+    sub rsp, 32
 
     push rbx                ; сохранение rbx
 
 ; основная обработка
     ; подготовка перед внешним циклом
     cld
-    mov rdi, [rbp - 16]	    ; rdi = input;
+    mov rdi, [rbp - 8]	    ; rdi = str;
+    mov dword [rbp - 48], 0 ; num = 0; // счетчик гнезд
 
+.ext_loop:
+    ; получить исходное слово
     mov rcx, STRING_SIZE
     mov al, ' '
     repe scasb              ; пропустить все пробелы
     dec rdi                 ; rdi = слово в строке (исходное слово, формирующее гнездо)
+    cmp byte [rdi], 0
+    jz .end_of_proc
 
-        ; temp
-        ; mov r12, rdi
-        ; mov r13, rcx
-        ; mov rsi, rdi
-        ; call _Z6outputiPc
-        ; mov rdi, r12
-        ; mov rcx, r13
-        ; mov al, ' '
-        ; end
+    mov [rbp - 32], rdi     ; ptr1 = rdi;
 
-    mov [rbp - 24], rdi     ; nestWord (local var) = rdi
-    mov [rbp - 6], cx       ; charPos (local var)
+    ; выбор гнезда для записи результата
+    mov dword [rbp - 44], 0 ; заполняемость гнезда
+    mov eax, [rbp - 48]
+    sal eax, 8
+    add [rbp - 16], eax     ; переключение на нужное гнездо
 
-    repne scasb             ; найти пробел
-    mov rax, rcx
-    mov cx, [rbp - 6]
-    sub ecx, eax            ; cx - длина исходного слова
-    mov [rbp - 4], cx
-    dec cx
-    mov [rbp - 2], cx       ; inLen = --cx;
+    ; len1 = длина исходного слова
+    ;push rcx
+    push ' '
+    push rdi
+    call _strlen@16         ; strlen(rdi, ' ');
+    ;pop rcx
+    mov [rbp - 20], eax
 
-    mov rdi, [rbp - 32]     ; rdi = result[0];
-    mov rsi, [rbp - 24]     ; rsi = nestWord;
-    rep movsb               ; вписать nestWord 0-м словом в гнездо
+    ; запись исходного слова в гнездо
+    mov rcx, rax
+    mov rsi, rdi
+    mov rdi, [rbp - 16]
+    rep movsb
+    inc eax
+    add [rbp - 44], eax     ; len += ++eax;
     mov byte [rdi], ' '
 
-    cmp byte [rsi], 10
-    je .end_of_proc
+    mov rdi, [rbp - 32]     ; rdi = ptr1;
+    add edi, [rbp - 20]     ; rdi += len1;
 
-    ; repnz scasb           ; пропустить все не пробелы - пропустить текущее слово
-    mov rdi, rsi
+.int_loop:
     
-.cmp_next_word:
-    xor rcx, rcx
-    mov cx, [rbp - 6]
-    mov al, ' '
-    repe scasb              ; пропустить все пробелы - найти следующее слово
-    dec rdi                 ; rdi = следующее слово в строке (слово для сравнения)
-    mov [rbp - 40], rdi     ; wordStart = rdi;
-
-    ; сравнение исходного слова с текущим
-
-    mov rsi, [rbp - 24]     ; rsi = nestWord;
-    movzx rcx, word [rbp - 2]
-    repe cmpsb              ; сравнение до 1-го несовпадения
-
-    push rcx                ; кол-во оставшихся букв в исходном слове
-    push rdi                ; сравниваемое слово
-
-    xor rbx, rbx
-    xor rdx, rdx
-
-    xor al, al              ; может, проверяемое слово короче исходного (конец строки)
-    inc rcx
-    repne scasb
-    mov rdi, [rsp]
-    cmp rcx, 1
-    sete bl
-    mov al, ' '             ; может, проверяемое слово короче исходного (пробел в конце)
-    mov rcx, [rsp + 8]
-    inc rcx
-    repne scasb
-    pop rdi
-    cmp rcx, 1
-    sete dl
-    or bl, dl
-    jz .skip_move
-    dec rdi
-.skip_move:
-
-    pop rcx
-
-    xor rdx, rdx
-    xor rbx, rbx
-    cmp byte [rsi], ' '     ; исходное слово закончилось?
-    sete bl
-    cmp byte [rsi - 1], ' '
-    sete dl
-    or bl, dl               ; bl = ([rsi] == ' ') | ([rsi - 1] == ' ')
-    jz .cmps_go_on          ; bl - исходное слово закончилось
-
-    cmp byte [rdi], ' '     ; сравниваемое слово закончилось?
-    sete bl
-    cmp byte [rdi - 1], ' '
-    sete dl
-    or bl, dl               ; bl = ([rdi] == ' ') | ([rdi - 1] == ' ') // bl - найден пробел
-    mov dl, byte [rdi]
-    and dl, byte [rdi - 1]  ; dl = [rdi] & [rdi - 1]
-    cmp dl, 0
-    sete dl                 ; // dl - найден /0
-    mov [rbp - 48], rdi     ; wordPtr = rdi;
-    or bl, dl               ; bl - найден пробел или /0, т.е. сравниваемое слово закончилось
-    ;T jz .check_end_of_string
-    jz .come_back
-
-    ; добавить сравниваемое слово
-.add_word:
-    sub rdi, [rbp - 40]
-    mov rcx, rdi            ; rcx = длина сравниваемого слова
-    mov bx, [rbp - 4]       ; bx = writePos;
-    mov rdi, [rbp - 32]     ; rdi = result;
-    add di, bx
-    mov rsi, [rbp - 40]     ; rsi = слово, которое только что сравнивалось
-    add [rbp - 4], cx       ; writePos += cx;
-    rep movsb
-    cmp byte [rdi - 1], ' '
-    je .space_is_already_there
-    mov byte [rdi], ' '     ; в конце переписанного слова запишем пробел
-    inc word [rbp - 4]
-.space_is_already_there:
-    jmp .check_end_of_string
-
-.come_back:
-    dec rsi
-    inc word [rbp - 48]
-    cmpsb
-    jz .add_word
-    jnz .check_end_of_string
-
-.cmps_go_on:
-.comparison:                ; сравнение до пробела у исходного слова или до 1-го несовпадения
-    mov al, [rsi]           ; rsi - исходное слово
-    cmp al, ' '
-    je .end_of_comparison
-    cmp al, [rdi]           ; rdi - сравниваемое слово
-    jne .end_of_comparison
-    inc rsi
-    inc rdi
-    jmp .comparison
-
-.end_of_comparison:
-
-    xor rbx, rbx
-    xor rdx, rdx
-
-    cmp byte [rdi], ' '     ; сравниваемое слово закончилось?
-    sete bl
-    cmp byte [rdi], 0       ; сравниваемое слово закончилось?
-    sete dl
-    or bl, dl               ; bl = ([rdi] == ' ') | ([rdi] == '\0')
-    jz .failed_comparison
-
-    ; добавить сравниваемое слово
-    mov [rbp - 48], rdi     ; wordPtr = rdi;
-    sub rdi, [rbp - 40]          
-    mov rcx, rdi            ; rcx = длина сравниваемого слова
-    mov bx, [rbp - 4]       ; bx = writePos;
-    mov rdi, [rbp - 32]     ; rdi = result;
-    add di, bx
-    mov rsi, [rbp - 40]     ; rsi = слово, которое только что сравнивалось
-    add [rbp - 4], cx       ; writePos += cx;
-    rep movsb
-    mov byte [rdi], ' '     ; в конце переписанного слова запишем пробел
-    inc word [rbp - 4]
-
-    jmp .check_end_of_string
-.failed_comparison:
-
+    ; получить слово для сравнения
     mov rcx, STRING_SIZE
     mov al, ' '
-    repne scasb
-    dec rdi
-    mov [rbp - 48], rdi
-
-        ; temp
-        ; mov r12, rdi
-        ; mov r13, rcx
-        ; mov rsi, rdi
-        ; call _Z6outputiPc
-        ; mov rdi, r12
-        ; mov rcx, r13
-        ; mov al, ' '
-        ; end
-
-    ;repnz scasb            ; пропустить все не \0 (temp)
-    ;dec rdi
-.check_end_of_string:
-    mov rdi, [rbp - 48]     ; rdi = wordPtr;
+    repe scasb              ; пропустить все пробелы
+    dec rdi                 ; rdi = слово в строке (слово для сравнения)
+    cmp byte [rdi], 0
+    jne .handle_word
     ; переход к следующей итерации
-    xor rbx, rbx
-    mov bl, byte [rdi]
-    and bl, byte [rdi - 1]  ; bl = [rdi] & [rdi - 1]
-    jnz .cmp_next_word      ; если слова для сравнения еще есть, возвращаемся наверх
+    mov ebx, [rbp - 44]
+    add rbx, [rbp - 16]
+    mov byte [rbx - 1], 0       ; result[len] = '\0'; // "закупорим" гнездо
+    mov rdi, [rbp - 32]
+    add edi, [rbp - 20]
+    inc dword [rbp - 48]
+    jmp .ext_loop
 
-    mov rdi, [rbp - 32]     ; rdi = result;
-    add di, [rbp - 4]       ; di += writePos;
-    dec rdi
-    mov byte [rdi], 0
+.handle_word:
+    mov [rbp - 40], rdi     ; ptr2 = rdi;
 
-    ; mov rax, rdi
-
+    ; len2 = длина сравниваемого слова
+    ;push rcx
+    push ' '
     push rdi
-    push rsi
-    sub rsp, 64             ; char buf[32];
-    movzx cx, [rbp - 2]     ; rcx = inLen;
-    mov rsi, [rbp - 24]     ; rsi = nestWord;
-    mov rdi, rsp
-    rep movsb               ; strcpy(buf, nestWord);
-    mov byte [rdi], 0
+    call _strlen@16         ; strlen(rdi, ' ');
+    ;pop rcx
+    mov [rbp - 24], eax
 
-    mov rdi, 5
-    mov rsi, rsp
-    ;call _Z6outputiPc       ; output();
+    cmp [rbp - 20], eax
+    je .len1_eq_len2
+    add edi, [rbp - 24]     ; заглушка
+    jmp .int_loop
 
-    add rsp, 64
-    pop rsi
-    pop rdi
+.len1_eq_len2:
+    ; сравнение не более len2 раз или до несовпадения
+    xor rcx, rcx
+    mov ecx, [rbp - 24]
+    mov rsi, [rbp - 32]
+    repe cmpsb
+    jecxz .len1_eq_len2_add_word
+    
+    ; пропустить по 1 букве в словах
+
+    ; сравнение до конца слова или до несовпадения
+    repe cmpsb
+    ; предыдущие буквы одинаковые?
+    je .len1_eq_len2_add_word
+    mov rdi, [rbp - 40]
+    add edi, [rbp - 24]         ; пропуск неподошедшего слова
+    jmp .int_loop
+
+.len1_eq_len2_add_word:
+    ; добавить сравниваемое слово
+    mov rdi, [rbp - 16]
+    add edi, [rbp - 44]
+    mov rsi, [rbp - 40]
+    xor rcx, rcx
+    mov ecx, [rbp - 24]
+    rep movsb
+    mov byte [rdi], ' '
+    mov eax, [rbp - 24]
+    inc eax
+    add [rbp - 44], eax
+    mov rdi, rsi
+    jmp .int_loop
+
 .end_of_proc:
 
     pop rbx                 ; восстановление rbx
@@ -261,3 +150,28 @@ _Z8cmpwordsPcPS_:
     pop rbp
     mov rax, 0              ; возвращаемое значение
     ret
+
+%define MAX_STRING_LENGTH 256
+
+; int __stdcall strlen(char* str, char sym);
+_strlen@16:
+    ; // Пример вызова по C: strlen(char* str, char sym); // str - строка, sym - символ конца строки
+    push    rbp
+    mov     rbp, rsp
+
+    push    rdi             ; сохранить rdi
+
+    mov     rax, [rbp + 24] ; [rbp + 24] - символ конца строки (arg1)
+    mov     rdi, [rbp + 16] ; [rbp + 16] - адрес строки (arg0)
+
+    cld
+    mov     rcx, MAX_STRING_LENGTH
+    repnz   scasb           ; поиск символа конца строки
+
+    mov     rax, MAX_STRING_LENGTH
+    sub     rax, rcx
+    dec     rax             ; вычисление длины строки по значению rcx
+
+    pop     rdi             ; восстановить rdi
+    pop     rbp
+    ret     16

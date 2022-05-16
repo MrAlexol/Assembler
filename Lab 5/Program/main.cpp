@@ -1,23 +1,18 @@
 #include <cstdio>
 #include <cstring>
 
-extern int cmpwords(char *str, char *result[]);
-void output(int, char*);
-
 const int maxNests = 16;
 const int stringSize = 256;
 
-int main(int argc, char *argv[])
+extern int cmpwords(char *str, char result[maxNests][stringSize]);
+void output(int, char*);
+
+int main()
 {
     puts("Enter the string:");
 
     char input[stringSize];
-    char* nests[maxNests];
-    char result[maxNests*stringSize] = {0};
-
-    for (int i = 0; i < maxNests; i++) {
-        nests[i] = result + i * stringSize;
-    }
+    char answer[maxNests][stringSize];
 
     //fgets(input, stringSize, stdin);
     strcpy(input, "12 12 13\n");
@@ -26,9 +21,9 @@ int main(int argc, char *argv[])
 
     printf("Your string: '%s'\n", input);
 
-    cmpwords(input, nests);
+    cmpwords(input, answer);
 
-    printf("Result:\n%s\n", result);
+    printf("Result:\n%s\n", answer);
 
     return 0;
 }
