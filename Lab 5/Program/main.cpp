@@ -16,8 +16,8 @@ int main()
 
     scanf("%255[^\n]", input);
 
-    input[strlen(input) - 1] = '\0';
     printf("Your string: '%s'\n", input);
+    input[strlen(input) + 1] = '\0';
     input[strlen(input)] = ' ';
 
     int nests = cmpwords(input, answer);
