@@ -14,21 +14,21 @@ int main()
     char input[stringSize];
     char answer[maxNests][stringSize];
 
-    //fgets(input, stringSize, stdin);
-    strcpy(input, "proza pruza pruzo proz rproza ");
+    scanf("%255[^\n]", input);
 
-    //input[strlen(input)-1] = 0;
-
+    input[strlen(input) - 1] = '\0';
     printf("Your string: '%s'\n", input);
+    input[strlen(input)] = ' ';
 
-    cmpwords(input, answer);
+    int nests = cmpwords(input, answer);
+    printf("There are %d words in input string.\n", nests);
 
     puts("Result:");
-    int nestNo = 0;
-    while (answer[nestNo][0] != '\0') {
-        printf("%s\n", answer[nestNo]);
-        nestNo++;
+    for (int i = 0; i < nests; i++) {
+        printf("%d. %s\n", i + 1, answer[i]);
+
     }
+
     return 0;
 }
 

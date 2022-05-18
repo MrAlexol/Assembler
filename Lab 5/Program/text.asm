@@ -11,21 +11,22 @@
 
 _Z8cmpwordsPcPA256_c:
     ; locals:
-    ; [rbp - 8] - str       qword   char[]
-    ; [rbp - 16] - result   qword   char[]
-    ; [rbp - 20] - len1     dword   int
-    ; [rbp - 24] - len2     dword   int
-    ; [rbp - 32] - ptr1     qword   char*
-    ; [rbp - 40] - ptr2     qword   char*
-    ; [rbp - 44] - len      dword   int
-    ; [rbp - 48] - num      dword   int
+    ; [rbp - 8] - str       qword   char[]  входная строка (данные по указателю не меняются)
+    ; [rbp - 16] - result   qword   char[]  выходной массив (изменяемый указатель)
+    ; [rbp - 20] - len1     dword   int     длина исходного слова (формирующего гнездо)
+    ; [rbp - 24] - len2     dword   int     длина сравниваемого слова (записываемого или нет в гнездо)
+    ; [rbp - 32] - ptr1     qword   char*   указатель на исходное слово
+    ; [rbp - 40] - ptr2     qword   char*   указатель на сравниваемое слово
+    ; [rbp - 44] - len      dword   int     длина строки в выходном массиве (индекс для записи в ней)
+    ; [rbp - 46] - num      word    short   счетчик гнезд
+    ; [rbp - 48] - cnt      word    short   счетчик слов в гнезде
 
     push rbp
     mov rbp, rsp
 
     push rdi
     push rsi
-    sub rsp, 32
+    sub rsp, 40
 
     push rbx                ; сохранение rbx
 
@@ -33,7 +34,8 @@ _Z8cmpwordsPcPA256_c:
     ; подготовка перед внешним циклом
     cld
     mov rdi, [rbp - 8]	    ; rdi = str;
-    mov dword [rbp - 48], 0 ; num = 0; // счетчик гнезд
+    mov word [rbp - 46], 0  ; num = 0; // счетчик гнезд
+    mov word [rbp - 48], 0  ; cnt = 0; // счетчик слов в гнезде
 
 .ext_loop:
     ; получить исходное слово
@@ -45,12 +47,6 @@ _Z8cmpwordsPcPA256_c:
     jz .end_of_proc
 
     mov [rbp - 32], rdi     ; ptr1 = rdi;
-
-    ; выбор гнезда для записи результата
-    mov dword [rbp - 44], 0 ; заполняемость гнезда
-    mov eax, [rbp - 48]
-    sal eax, 8
-    add [rbp - 16], eax     ; переключение на нужное гнездо
 
     ; len1 = длина исходного слова
     ;push rcx
@@ -81,13 +77,38 @@ _Z8cmpwordsPcPA256_c:
     dec rdi                 ; rdi = слово в строке (слово для сравнения)
     cmp byte [rdi], 0
     jne .handle_word
+
+    ; отладочный вывод (вызов процедуры на C++)
+    sub rsp, 32             ; char* currentWord = new char[32];
+    mov rdi, rsp            ; rdi = currentWord;
+    mov rsi, [rbp - 32]     ; rsi = ptr1;
+    mov ecx, [rbp - 20]     ; ecx = len1;
+    rep movsb
+    mov byte [rdi], 0
+
+    movzx rdi, word [rbp - 48]
+    mov rsi, rsp
+    call _Z6outputiPc       ; output(cnt, currentWord);
+
+    add rsp, 32             ; delete[] currentWord;
+
     ; переход к следующей итерации
+    xor rbx, rbx
     mov ebx, [rbp - 44]
     add rbx, [rbp - 16]
-    mov byte [rbx - 1], 0       ; result[len] = '\0'; // "закупорим" гнездо
+    mov byte [rbx - 1], 0   ; result[len] = '\0'; // "закупорим" гнездо
+    xor rdi, rdi
     mov edi, [rbp - 20]
     add rdi, [rbp - 32]     ; rdi = ptr1 + len1;
-    inc dword [rbp - 48]
+    inc word [rbp - 46]     ; num++; // номер гнезда
+    mov word [rbp - 48], 0  ; cnt = 0; // сброс счетчика слов в гнезде
+
+    ; выбор гнезда для записи результата
+    mov dword [rbp - 44], 0 ; заполняемость гнезда
+    mov eax, 1
+    sal eax, 8
+    add [rbp - 16], eax     ; переключение на нужное гнездо
+
     jmp .ext_loop
 
 .handle_word:
@@ -127,7 +148,7 @@ _Z8cmpwordsPcPA256_c:
     ; предыдущие буквы одинаковые?
     je .add_word
     mov edi, [rbp - 24]
-    add rdi, [rbp - 40]         ; пропуск неподошедшего слова
+    add rdi, [rbp - 40]     ; пропуск неподошедшего слова
     jmp .int_loop
 
 .len1_lt_len2:
@@ -149,7 +170,7 @@ _Z8cmpwordsPcPA256_c:
     je .add_word
 
     mov edi, [rbp - 24]
-    add rdi, [rbp - 40]         ; пропуск неподошедшего слова
+    add rdi, [rbp - 40]     ; пропуск неподошедшего слова
     jmp .int_loop
 
 .len1_gt_len2:
@@ -171,7 +192,7 @@ _Z8cmpwordsPcPA256_c:
     je .add_word
 
     mov edi, [rbp - 24]
-    add rdi, [rbp - 40]         ; пропуск неподошедшего слова
+    add rdi, [rbp - 40]     ; пропуск неподошедшего слова
     jmp .int_loop
 
 .add_word:
@@ -187,14 +208,17 @@ _Z8cmpwordsPcPA256_c:
     inc eax
     add [rbp - 44], eax
     mov rdi, rsi
+    inc word [rbp - 48]     ; cnt++;
     jmp .int_loop
 
 .end_of_proc:
 
+    ; return num; // возвращаемое значение
+    movzx rax, word [rbp - 46]
+
     pop rbx                 ; восстановление rbx
     mov rsp, rbp
     pop rbp
-    mov rax, 0              ; возвращаемое значение
     ret
 
 %define MAX_STRING_LENGTH 256
