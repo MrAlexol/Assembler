@@ -18,7 +18,7 @@ void integer(std::string& str) {
     }
     for (auto chr : word)
     {
-        if (!isdigit(chr)) throw std::string("The following lexeme is an integer: ").append(word);
+        if (!isdigit(chr)) throw std::string("The following lexeme is not an integer: ").append(word);
     }
     std::cout << "Integer: " << sign << word << '\n';
     str.erase(0, word.length());
