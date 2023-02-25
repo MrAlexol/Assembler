@@ -1,0 +1,36 @@
+Start
+=== test/HW1/00.test ===
+White house the blue sky green grass
+--- Test --->
+Type the text
+Total vowels: 12
+Consonants in words:
+White - 3
+house - 2
+the - 2
+blue - 2
+sky - 2
+green - 3
+grass - 4
+Press Enter to Exit
+=== test/HW1/01.test ===
+thr ssm tghs
+--- Test --->
+Type the text
+Total vowels: 0
+Consonants in words:
+thr - 3
+ssm - 3
+tghs - 4
+Press Enter to Exit
+=== test/HW1/02.test ===
+ayui    ghfhgs       truncate   table
+--- Test --->
+Type the text
+Total vowels: 9
+Consonants in words:
+ayui - 0
+ghfhgs - 6
+truncate - 5
+table - 3
+Press Enter to Exit
