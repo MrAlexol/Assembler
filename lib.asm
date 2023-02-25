@@ -85,6 +85,13 @@ IntToStr:
 		 push   esi
          lea    esi,[esi+edi]   ; начало символов результата
 		 pop    edi
+
+         mov    ebx, [esp]
+         cmp    byte [ebx], '-'
+         je     .signed         ; если у числа нет знака,
+         dec    edi             ; левый символ будет занят цифрой, а не пустовать
+         dec    eax             ; длина результата+знак+0А, но знака нет
+.signed:
          rep movsb
          pop    esi  
          pop    ecx

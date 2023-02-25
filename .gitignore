@@ -8,8 +8,12 @@
 *.o
 *.obj
 *.lst
+
 # and ignore backup files
 *.bak
+
+# and ignore output files
+*.out
 
 # Unignore all dirs
 !*/

@@ -79,12 +79,19 @@ IntToStr64:
          jne    .again
          mov    rcx, 6
          sub    rcx, rdi        ; длина результата+знак
-		 mov    rax,rcx
-		 inc    rax             ; длина результата+знак+0А
+         mov    rax, rcx
+         inc    rax             ; длина результата+знак+0А
          inc    rsi             ; пропускаем знак
-		 push   rsi
-         lea    rsi,[rsi+rdi]   ; начало символов результата
-		 pop    rdi
+         push   rsi
+         lea    rsi, [rsi+rdi]  ; начало символов результата
+         pop    rdi
+
+         mov    rbx, [rsp]
+         cmp    byte [rbx], '-'
+         je     .signed         ; если у числа нет знака,
+         dec    rdi             ; левый символ будет занят цифрой, а не пустовать
+         dec    rax             ; длина результата+знак+0А, но знака нет
+.signed:
          rep movsb
          pop    rsi  
          pop    rcx
