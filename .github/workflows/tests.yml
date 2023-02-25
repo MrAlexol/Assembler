@@ -7,15 +7,11 @@ on:
       branches: [ master ]
 
 jobs:
-  before-script:
-    runs-on: ubuntu-latest
-    steps:
-      - name: before-script
-        run: sudo apt-get update && sudo apt-get upgrade && sudo apt-get -y install gcc g++ make nasm binutils
-
-  test:
+  test-all:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: before-script
+        run: sudo apt-get update && sudo apt-get upgrade && apt-get install grub-efi && update-grub && sudo apt-get -y install gcc g++ make nasm binutils
       - name: test
-        run: chmod +x test/all && test/all
+        run: chmod +x test/all.sh && test/all.sh
