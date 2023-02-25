@@ -16,5 +16,5 @@ debug: $(TARGET)
 clear:
 	rm -f $(TARGET) $(TARGET).o $(TARGET).lst
 translate: $(TARGET)
-	echo "\033[32mFile ${TARGET} is ready\033[0m"
+	@echo "\033[32mFile ${TARGET} is ready\033[0m"
 

@@ -14,5 +14,5 @@ run: $(TARGET)
 debug: $(TARGET)
 	edb --run $(TARGET)
 translate: $(TARGET)
-	echo "\033[32mFile ${TARGET} is ready"
+	@echo "\033[32mFile ${TARGET} is ready\033[0m"
 
