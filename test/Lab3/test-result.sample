@@ -1,0 +1,48 @@
+Start
+=== test/Lab3/00.test ===
+5
+        5
+--- Test --->
+Type expression parameters
+q = d = Error! Division by 0 is prohibited!
+Press Enter to Exit
+=== test/Lab3/01.test ===
+300
+      1000
+--- Test --->
+Type expression parameters
+q = d = Incoming parameters:
+q = 300
+d = 1000
+The result is f = 3500
+Press Enter to Exit
+=== test/Lab3/02.test ===
+-128
+     7
+--- Test --->
+Type expression parameters
+q = d = Incoming parameters:
+q = -128
+d = 7
+The result is f = 8199
+Press Enter to Exit
+=== test/Lab3/03.test ===
+128
+      -2
+--- Test --->
+Type expression parameters
+q = d = Incoming parameters:
+q = 128
+d = -2
+The result is f = -650
+Press Enter to Exit
+=== test/Lab3/04.test ===
+-256
+     -5
+--- Test --->
+Type expression parameters
+q = d = Incoming parameters:
+q = -256
+d = -5
+The result is f = -6558
+Press Enter to Exit
