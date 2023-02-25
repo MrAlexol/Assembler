@@ -12,6 +12,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: before-script
-        run: sudo apt-get update && sudo apt-get upgrade && apt-get install grub-efi && update-grub && sudo apt-get -y install gcc g++ make nasm binutils
+        run: sudo apt-get update && sudo apt-get upgrade && sudo apt-get install -y grub-pc 'grub-efi*-' && sudo apt-get -y install gcc g++ make nasm binutils
       - name: test
         run: chmod +x test/all.sh && test/all.sh
