@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for dir in "Lab 1" "Lab 2" "Lab 3" "Lab 4" "HW 1"
+for dir in "Lab 1" "Lab 2" "Lab 3" "Lab 4" "HW 1" "HW 2"
 do
     cd "${dir}"
     make translate

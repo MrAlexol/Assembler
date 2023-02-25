@@ -1,0 +1,2 @@
+const xxx: record ch,cs:char; a:integer; end = (ch:'u';cs:'5';a:+0);
+end

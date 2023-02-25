@@ -10,6 +10,9 @@ const char* delimiters = "+-?:;= */,)";
 
 void integer(std::string& str) {
     std::string word = str.substr(0, str.find_first_of(delimiters));
+
+    if (word.empty()) word = str[0] + str.substr(1, str.find_first_of(delimiters) + 1);
+
     char sign = 0;
     if (word[0] == '+' || word[0] == '-') {
         sign = word[0];
@@ -20,7 +23,9 @@ void integer(std::string& str) {
     {
         if (!isdigit(chr)) throw std::string("The following lexeme is not an integer: ").append(word);
     }
-    std::cout << "Integer: " << sign << word << '\n';
+    std::cout << "Integer: ";
+    if (sign == '-') std::cout << sign;
+    std::cout << word << '\n';
     str.erase(0, word.length());
 }
 

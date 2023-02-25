@@ -1,0 +1,2 @@
+Const a: Record a:integer; ch:char; end = (a:--6;ch:'u');
+end

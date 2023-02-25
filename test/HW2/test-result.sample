@@ -1,0 +1,91 @@
+Start
+=== test/HW2/00.test ===
+Const uuu: record x,y:integer; ch:char; end = (x:-6;y:8;ch:'u');
+end
+--- Test --->
+Type the string
+=====
+Your string: "Const uuu: record x,y:integer; ch:char; end = (x:-6;y:8;ch:'u');"
+Function word: 'const'
+Identifier: uuu
+Symbol: ':'
+Function word: 'record'
+Identifier: x
+Identifier: y
+Identifier: ch
+Function word: 'end'
+Symbol: '='
+Symbol: '('
+Identifier: x
+Integer: -6
+Identifier: y
+Integer: 8
+Identifier: ch
+Char: u
+== Correct
+Type the string
+=== test/HW2/01.test ===
+const xxx: record ch,cs:char; a:integer; end = (ch:'u';cs:'5';a:+0);
+end
+--- Test --->
+Type the string
+=====
+Your string: "const xxx: record ch,cs:char; a:integer; end = (ch:'u';cs:'5';a:+0);"
+Function word: 'const'
+Identifier: xxx
+Symbol: ':'
+Function word: 'record'
+Identifier: ch
+Identifier: cs
+Identifier: a
+Function word: 'end'
+Symbol: '='
+Symbol: '('
+Identifier: ch
+Char: u
+Identifier: cs
+Char: 5
+Identifier: a
+Integer: 0
+== Correct
+Type the string
+=== test/HW2/02.test ===
+const xxx: Record chcs:char; a: end = (ch:'u';cs:'5';a:0);
+end
+--- Test --->
+Type the string
+=====
+Your string: "const xxx: Record chcs:char; a: end = (ch:'u';cs:'5';a:0);"
+Function word: 'const'
+Identifier: xxx
+Symbol: ':'
+Function word: 'record'
+Identifier: chcs
+Identifier: a
+Data type expected. Found end
+== Incorrect
+Type the string
+=== test/HW2/03.test ===
+Const a: Record a:integer; ch:char; end = (a:--6;ch:'u');
+end
+--- Test --->
+Type the string
+=====
+Your string: "Const a: Record a:integer; ch:char; end = (a:--6;ch:'u');"
+Function word: 'const'
+Identifier: a
+Symbol: ':'
+Function word: 'record'
+Identifier: a
+Identifier: ch
+Function word: 'end'
+Symbol: '='
+Symbol: '('
+Identifier: a
+The following lexeme is not an integer: -
+== Incorrect
+Type the string
+=== test/HW2/04.test ===
+end
+--- Test --->
+Type the string
