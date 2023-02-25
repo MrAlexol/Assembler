@@ -34,3 +34,21 @@ ghfhgs - 6
 truncate - 5
 table - 3
 Press Enter to Exit
+=== test/HW1/03.test ===
+aaaa   oooooooooooooo i
+--- Test --->
+Type the text
+Total vowels: 19
+Consonants in words:
+aaaa - 0
+oooooooooooooo - 0
+i - 0
+Press Enter to Exit
+=== test/HW1/04.test ===
+ra
+--- Test --->
+Type the text
+Total vowels: 1
+Consonants in words:
+ra - 1
+Press Enter to Exit

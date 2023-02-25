@@ -11,6 +11,7 @@ TARGET = main
  
 all: $(TARGET)
 translate: $(TARGET)
+	@echo "\033[32mFile hw2 is ready\033[0m"
  
 $(TARGET): $(TARGET).cpp
 	$(CC) $(CFLAGS) -o $(TARGET) $(TARGET).cpp
